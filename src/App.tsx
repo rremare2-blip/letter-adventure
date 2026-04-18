@@ -175,70 +175,60 @@ function Home({ name, stars, done, onDay, onGame }: {
   const [confirmReset, setConfirmReset] = useState(false);
   const pct = Math.round((done.length / 10) * 100);
   const fname = getFirstName(name);
-  const isFullName = name.includes(" ") || name.includes(".");
+  const isFullName = name !== fname;
 
+  // --- HANDLERS ---
   const saveName = async (v: string): Promise<void> => {
     const n = sanitizeName(v);
     if (!n) return;
-    try { await store.set("cname", n); } catch {}
-    window.location.reload();
+    try { 
+      await store.set("cname", n); 
+      // Reloading ensures all components sync with the new name
+      window.location.reload(); 
+    } catch {}
   };
 
   const resetProgress = async (): Promise<void> => {
-    try { await store.set("cstars", "0"); await store.set("cdone", "[]"); } catch {}
-    window.location.reload();
+    try { 
+      await store.set("cstars", "0"); 
+      await store.set("cdone", "[]"); 
+      window.location.reload(); 
+    } catch {}
   };
 
+  // --- RENDER: RESET CONFIRMATION SCREEN ---
   if (confirmReset) return (
-    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"linear-gradient(135deg,#fbbf24 0%,#f472b6 50%,#a78bfa 100%)",padding:24,textAlign:"center"}}>
-      <div style={{fontSize:64,marginBottom:16}}>⚠️</div>
-      <h1 style={{fontSize:32,fontWeight:900,color:"white",textShadow:"2px 3px 10px rgba(0,0,0,.25)",marginBottom:24}}>Reset Progress?</h1>
-      <div style={{background:"white",borderRadius:28,padding:32,boxShadow:"0 24px 64px rgba(0,0,0,.2)",maxWidth:380,width:"100%"}}>
-        <p style={{fontSize:16,fontWeight:700,color:"#7c3aed",marginBottom:12}}>This will clear all your progress:</p>
-        <ul style={{textAlign:"left",color:"#374151",fontWeight:600,fontSize:14,marginBottom:20}}>
-          <li>✓ All completed days will be reset</li>
-          <li>✓ Your stars will be cleared</li>
-          <li>✓ Your name stays the same</li>
-        </ul>
-        <p style={{color:"#dc2626",fontWeight:700,marginBottom:16}}>This cannot be undone!</p>
-        <div style={{display:"flex",gap:10}}>
-          <button onClick={() => setConfirmReset(false)}
-            style={{flex:1,padding:12,fontSize:15,fontWeight:700,background:"#e5e7eb",color:"#374151",border:"none",borderRadius:12,cursor:"pointer"}}>Cancel</button>
-          <button onClick={resetProgress}
-            style={{flex:1,padding:12,fontSize:15,fontWeight:800,background:"linear-gradient(135deg,#f87171,#dc2626)",color:"white",border:"none",borderRadius:12,cursor:"pointer"}}>Reset ⚠️</button>
+    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"#ef4444",padding:24,textAlign:"center"}}>
+      <div style={{background:"white",borderRadius:28,padding:32,maxWidth:380,width:"100%"}}>
+        <h2 style={{color:"#dc2626"}}>Reset Progress?</h2>
+        <p>This will clear all your stars and completed days. Your name will stay the same.</p>
+        <div style={{display:"flex",gap:10,marginTop:20}}>
+          <button onClick={() => setConfirmReset(false)} style={{flex:1,padding:12,borderRadius:12,background:"#e5e7eb",border:"none"}}>Cancel</button>
+          <button onClick={resetProgress} style={{flex:1,padding:12,borderRadius:12,background:"#dc2626",color:"white",fontWeight:800,border:"none"}}>Yes, Reset</button>
         </div>
       </div>
     </div>
   );
 
+  // --- RENDER: EDIT NAME SCREEN ---
   if (editing) return (
-    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"linear-gradient(135deg,#fbbf24 0%,#f472b6 50%,#a78bfa 100%)",padding:24,textAlign:"center"}}>
-      <div style={{fontSize:64,marginBottom:16}}>✏️</div>
-      <h1 style={{fontSize:32,fontWeight:900,color:"white",textShadow:"2px 3px 10px rgba(0,0,0,.25)",marginBottom:24}}>Update Your Name</h1>
-      <div style={{background:"white",borderRadius:28,padding:32,boxShadow:"0 24px 64px rgba(0,0,0,.2)",maxWidth:420,width:"100%"}}>
-        <p style={{fontSize:14,fontWeight:700,color:"#7c3aed",marginBottom:12}}>Current: <strong>{name}</strong></p>
-        <p style={{fontSize:12,color:"#9ca3af",marginBottom:12}}>e.g. Jela Allison R. Robles</p>
-        <input value={newName}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewName(e.target.value)}
-          onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === "Enter" && saveName(newName)}
-          placeholder="Type full name…" maxLength={40}
-          style={{width:"100%",padding:"14px 18px",fontSize:18,borderRadius:14,border:"3px solid #a78bfa",outline:"none",fontWeight:800,textAlign:"center",color:"#4c1d95",boxSizing:"border-box",marginBottom:14}}
+    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"#7c3aed",padding:24}}>
+      <div style={{background:"white",borderRadius:28,padding:32,maxWidth:420,width:"100%",textAlign:"center"}}>
+        <h2 style={{color:"#4c1d95"}}>Change Name</h2>
+        <input 
+          value={newName} 
+          onChange={(e) => setNewName(e.target.value)}
+          style={{width:"100%",padding:14,fontSize:20,borderRadius:14,border:"2px solid #a78bfa",textAlign:"center"}}
         />
-        {sanitizeName(newName) && (
-          <div style={{marginBottom:14,padding:"8px 12px",background:"#f5f3ff",borderRadius:10,fontSize:12,color:"#7c3aed",fontWeight:700}}>
-            Games will use: <strong>{getFirstName(sanitizeName(newName))}</strong>
-          </div>
-        )}
-        <div style={{display:"flex",gap:10}}>
-          <button onClick={() => { setNewName(name); setEditing(false); }}
-            style={{flex:1,padding:12,fontSize:15,fontWeight:700,background:"#e5e7eb",color:"#374151",border:"none",borderRadius:12,cursor:"pointer"}}>Cancel</button>
-          <button onClick={() => saveName(newName)}
-            style={{flex:1,padding:12,fontSize:15,fontWeight:800,background:"linear-gradient(135deg,#34d399,#10b981)",color:"white",border:"none",borderRadius:12,cursor:"pointer"}}>Save ✓</button>
+        <div style={{display:"flex",gap:10,marginTop:20}}>
+          <button onClick={() => setEditing(false)} style={{flex:1,padding:12,borderRadius:12,background:"#e5e7eb",border:"none"}}>Cancel</button>
+          <button onClick={() => saveName(newName)} style={{flex:1,padding:12,borderRadius:12,background:"#34d399",color:"white",fontWeight:800,border:"none"}}>Save</button>
         </div>
       </div>
     </div>
   );
 
+  // --- RENDER: MAIN HOME SCREEN ---
   return (
     <div style={{minHeight:"100vh",background:"#f0f4ff",paddingBottom:40}}>
       {/* Header with buttons INSIDE to prevent overlap */}
